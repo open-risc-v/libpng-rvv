@@ -7,3 +7,6 @@ build/
 *.out
 *.raw
 .DS_Store
+
+# 大尺寸测试图（可由 mkpng.c 重新生成）
+big.png
