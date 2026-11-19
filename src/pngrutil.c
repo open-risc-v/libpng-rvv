@@ -15,6 +15,10 @@
 
 #include "pngpriv.h"
 
+#if defined(RVV_KERNELS) && defined(__riscv_v_intrinsic)
+#  include "rvv/filter_rvv.h"
+#endif
+
 #ifdef PNG_READ_SUPPORTED
 
 /* The minimum 'zlib' stream is assumed to be just the 2 byte header, 5 bytes
@@ -4128,6 +4132,19 @@ png_read_filter_row_sub(png_row_info *row_info, png_byte *row,
     const png_byte *prev_row)
 {
    size_t i;
+
+#if defined(RVV_KERNELS) && defined(__riscv_v_intrinsic)
+   {
+      unsigned int bpp = (row_info->pixel_depth + 7) >> 3;
+
+      if (bpp >= 1 && bpp <= 8 && row_info->rowbytes > bpp)
+      {
+         png_rvv_filter_sub(row, bpp, row_info->rowbytes);
+         return;
+      }
+   }
+#endif
+
    size_t istop = row_info->rowbytes;
    unsigned int bpp = (row_info->pixel_depth + 7) >> 3;
    png_byte *rp = row + bpp;
@@ -4146,6 +4163,15 @@ png_read_filter_row_up(png_row_info *row_info, png_byte *row,
     const png_byte *prev_row)
 {
    size_t i;
+
+#if defined(RVV_KERNELS) && defined(__riscv_v_intrinsic)
+   if (row_info->rowbytes > 0)
+   {
+      png_rvv_filter_up(row, prev_row, row_info->rowbytes);
+      return;
+   }
+#endif
+
    size_t istop = row_info->rowbytes;
    png_byte *rp = row;
    const png_byte *pp = prev_row;
